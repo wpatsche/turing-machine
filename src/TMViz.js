@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 /**
  * Turing machine visualization component.
  *
@@ -9,12 +9,12 @@
  * @module
  */
 
-var TuringMachine = require('./TuringMachine').TuringMachine,
-    TapeViz = require('./tape/TapeViz'),
-    StateGraph = require('./state-diagram/StateGraph'),
-    StateViz = require('./state-diagram/StateViz'),
-    watchInit = require('./watch').watchInit,
-    d3 = require('d3');
+var TuringMachine = require("./TuringMachine").TuringMachine,
+  TapeViz = require("./tape/TapeViz"),
+  StateGraph = require("./state-diagram/StateGraph"),
+  StateViz = require("./state-diagram/StateViz"),
+  watchInit = require("./watch").watchInit,
+  d3 = require("d3");
 
 /**
  * Create an animated transition function.
@@ -23,9 +23,11 @@ var TuringMachine = require('./TuringMachine').TuringMachine,
  * @return {(string, string) -> Instruction} Created transition function.
  */
 function animatedTransition(graph, animationCallback) {
-  return function (state, symbol) {
+  return function(state, symbol) {
     var tuple = graph.getInstructionAndEdge(state, symbol);
-    if (tuple == null) { return null; }
+    if (tuple == null) {
+      return null;
+    }
 
     animationCallback(tuple.edge);
     return tuple.instruction;
@@ -37,26 +39,36 @@ function animatedTransition(graph, animationCallback) {
  * @param  {{domNode: Node}} edge
  * @return {D3Transition} The animation. Use this for transition chaining.
  */
+
+// edge animation
 function pulseEdge(edge) {
   var edgepath = d3.select(edge.domNode);
   return edgepath
-      .classed('active-edge', true)
+    .classed("active-edge", true)
     .transition()
-      .style('stroke-width', '3px')
+    .style("stroke-width", "3px")
     .transition()
-      .style('stroke-width', '1px')
+    .style("stroke-width", "1px")
     .transition()
-      .duration(0)
-      .each('start', /* @this edge */ function () {
-        d3.select(this).classed('active-edge', false);
-      })
-      .style('stroke', null)
-      .style('stroke-width', null);
+    .duration(0)
+    .each(
+      "start",
+      /* @this edge */ function() {
+        d3.select(this).classed("active-edge", false);
+      }
+    )
+    .style("stroke", null)
+    .style("stroke-width", null);
 }
 
+// check tape for line
 function addTape(div, spec) {
-  return new TapeViz(div.append('svg').attr('class', 'tm-tape'), 9,
-    spec.blank, spec.input ? String(spec.input).split('') : []);
+  return new TapeViz(
+    div.append("svg").attr("class", "tm-tape"),
+    9,
+    spec.blank,
+    spec.input ? String(spec.input).split("") : []
+  );
 }
 
 /**
@@ -68,13 +80,13 @@ function addTape(div, spec) {
  */
 function TMViz(div, spec, posTable) {
   div = d3.select(div);
+
+  //create graph
   var graph = new StateGraph(spec.table);
-  this.stateviz = new StateViz(
-    div,
-    graph.getVertexMap(),
-    graph.getEdges()
-  );
-  if (posTable != undefined) { this.positionTable = posTable; }
+  this.stateviz = new StateViz(div, graph.getVertexMap(), graph.getEdges());
+  if (posTable != undefined) {
+    this.positionTable = posTable;
+  }
 
   this.edgeAnimation = pulseEdge;
   this.stepInterval = 100;
@@ -83,11 +95,18 @@ function TMViz(div, spec, posTable) {
   // We hook into the animation callback to know when to start the next step (when running).
   function animateAndContinue(edge) {
     var transition = self.edgeAnimation(edge);
+
+    //check running and create transition animate
     if (self.isRunning) {
-      transition.transition().duration(self.stepInterval).each('end', function () {
-        // stop if machine was paused during the animation
-        if (self.isRunning) { self.step(); }
-      });
+      transition
+        .transition()
+        .duration(self.stepInterval)
+        .each("end", function() {
+          // stop if machine was paused during the animation
+          if (self.isRunning) {
+            self.step();
+          }
+        });
     }
   }
 
@@ -96,10 +115,14 @@ function TMViz(div, spec, posTable) {
     spec.startState,
     addTape(div, spec)
   );
+
   // intercept and animate when the state is set
-  watchInit(this.machine, 'state', function (prop, oldstate, newstate) {
-    d3.select(graph.getVertex(oldstate).domNode).classed('current-state', false);
-    d3.select(graph.getVertex(newstate).domNode).classed('current-state', true);
+  watchInit(this.machine, "state", function(prop, oldstate, newstate) {
+    d3.select(graph.getVertex(oldstate).domNode).classed(
+      "current-state",
+      false
+    );
+    d3.select(graph.getVertex(newstate).domNode).classed("current-state", true);
     return newstate;
   });
 
@@ -111,13 +134,17 @@ function TMViz(div, spec, posTable) {
   /**
    * Set isRunning to true to run the machine, and false to stop it.
    */
-  Object.defineProperty(this, 'isRunning', {
+  Object.defineProperty(this, "isRunning", {
     configurable: true,
-    get: function () { return isRunning; },
-    set: function (value) {
+    get: function() {
+      return isRunning;
+    },
+    set: function(value) {
       if (isRunning !== value) {
         isRunning = value;
-        if (isRunning) { this.step(); }
+        if (isRunning) {
+          this.step();
+        }
       }
     }
   });
@@ -129,7 +156,7 @@ function TMViz(div, spec, posTable) {
 /**
  * Step the machine immediately and interrupt any animations.
  */
-TMViz.prototype.step = function () {
+TMViz.prototype.step = function() {
   if (!this.machine.step()) {
     this.isRunning = false;
     this.isHalted = true;
@@ -139,7 +166,7 @@ TMViz.prototype.step = function () {
 /**
  * Reset the Turing machine to its starting configuration.
  */
-TMViz.prototype.reset = function () {
+TMViz.prototype.reset = function() {
   this.isRunning = false;
   this.isHalted = false;
   this.machine.state = this.__spec.startState;
@@ -147,9 +174,13 @@ TMViz.prototype.reset = function () {
   this.machine.tape = addTape(this.__parentDiv, this.__spec);
 };
 
-Object.defineProperty(TMViz.prototype, 'positionTable', {
-  get: function ()  { return this.stateviz.positionTable; },
-  set: function (posTable) { this.stateviz.positionTable = posTable; }
+Object.defineProperty(TMViz.prototype, "positionTable", {
+  get: function() {
+    return this.stateviz.positionTable;
+  },
+  set: function(posTable) {
+    this.stateviz.positionTable = posTable;
+  }
 });
 
 module.exports = TMViz;
